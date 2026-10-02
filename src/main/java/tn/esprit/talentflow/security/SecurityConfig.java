@@ -16,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 @EnableMethodSecurity
 @Configuration
 @RequiredArgsConstructor
@@ -45,12 +46,28 @@ public class SecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        // Login et Register accessibles sans JWT
+                        // ==============================
+                        // SWAGGER
+                        // ==============================
+                        .requestMatchers(
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()
+
+                        // ==============================
+                        // AUTH
+                        // ==============================
                         .requestMatchers("/api/auth/**").permitAll()
+
+                        // ==============================
+                        // OFFRES PUBLIÉES
+                        // ==============================
                         .requestMatchers("/api/jobs/published").permitAll()
 
-
-                        // Toutes les autres routes nécessitent un JWT
+                        // ==============================
+                        // AUTRES ROUTES : JWT OBLIGATOIRE
+                        // ==============================
                         .anyRequest().authenticated()
                 )
 

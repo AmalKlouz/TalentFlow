@@ -13,10 +13,10 @@ import java.time.LocalDate;
 @Builder
 public class JobRequest {
 
-    @NotBlank
+    @NotBlank(message = "Le titre est obligatoire")
     private String title;
 
-    @NotBlank
+    @NotBlank(message = "La description est obligatoire")
     private String description;
 
     @NotBlank

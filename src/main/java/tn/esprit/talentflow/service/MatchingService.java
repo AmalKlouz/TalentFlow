@@ -2,7 +2,7 @@ package tn.esprit.talentflow.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
+import tn.esprit.talentflow.exception.ResourceNotFoundException;
 import tn.esprit.talentflow.dto.MatchingResponse;
 import tn.esprit.talentflow.entity.Job;
 import tn.esprit.talentflow.entity.User;
@@ -25,13 +25,13 @@ public class MatchingService {
 
         User candidate = userRepository.findById(candidateId)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Candidat introuvable"
                         ));
 
         Job job = jobRepository.findById(jobId)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Offre introuvable"
                         ));
 

@@ -11,11 +11,11 @@ import org.springframework.web.multipart.MultipartFile;
 @Builder
 public class ApplicationRequest {
 
-    @NotNull
+    @NotNull(message = "L'identifiant de l'offre est obligatoire")
     private Long jobId;
 
     private String coverLetter;
 
+    @NotNull(message = "Le CV est obligatoire")
     private MultipartFile cv;
 }
-

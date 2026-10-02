@@ -1,4 +1,3 @@
-
 package tn.esprit.talentflow.service;
 
 import lombok.RequiredArgsConstructor;
@@ -15,6 +14,7 @@ import tn.esprit.talentflow.entity.JobStatus;
 import tn.esprit.talentflow.entity.NotificationType;
 import tn.esprit.talentflow.entity.Role;
 import tn.esprit.talentflow.entity.User;
+import tn.esprit.talentflow.exception.ResourceNotFoundException;
 import tn.esprit.talentflow.repository.ApplicationRepository;
 import tn.esprit.talentflow.repository.JobRepository;
 import tn.esprit.talentflow.repository.UserRepository;
@@ -43,21 +43,21 @@ public class ApplicationService {
 
         if (candidate.getRole() != Role.CANDIDATE) {
 
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Seuls les candidats peuvent postuler"
             );
         }
 
         Job job = jobRepository.findById(request.getJobId())
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Offre introuvable"
                         )
                 );
 
         if (job.getStatus() != JobStatus.PUBLISHED) {
 
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Cette offre n'est pas publiée"
             );
         }
@@ -66,7 +66,7 @@ public class ApplicationService {
                 candidate.getId(),
                 job.getId())) {
 
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Vous avez déjà postulé à cette offre"
             );
         }
@@ -120,7 +120,7 @@ public class ApplicationService {
 
         if (candidate.getRole() != Role.CANDIDATE) {
 
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Seuls les candidats peuvent consulter "
                             + "leurs candidatures"
             );
@@ -157,7 +157,7 @@ public class ApplicationService {
         Application application =
                 applicationRepository.findById(id)
                         .orElseThrow(() ->
-                                new RuntimeException(
+                                new ResourceNotFoundException(
                                         "Candidature introuvable"
                                 )
                         );
@@ -188,7 +188,7 @@ public class ApplicationService {
         }
 
 
-        throw new RuntimeException(
+        throw new IllegalArgumentException(
                 "Vous n'êtes pas autorisé à consulter "
                         + "cette candidature"
         );
@@ -204,7 +204,7 @@ public class ApplicationService {
 
         if (!jobRepository.existsById(jobId)) {
 
-            throw new RuntimeException(
+            throw new ResourceNotFoundException(
                     "Offre introuvable"
             );
         }
@@ -228,7 +228,7 @@ public class ApplicationService {
         Application application =
                 applicationRepository.findById(id)
                         .orElseThrow(() ->
-                                new RuntimeException(
+                                new ResourceNotFoundException(
                                         "Candidature introuvable"
                                 )
                         );
@@ -265,7 +265,7 @@ public class ApplicationService {
 
         if (!validTransition) {
 
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Transition impossible de "
                             + currentStatus
                             + " vers "
@@ -307,7 +307,7 @@ public class ApplicationService {
         Application application =
                 applicationRepository.findById(applicationId)
                         .orElseThrow(() ->
-                                new RuntimeException(
+                                new ResourceNotFoundException(
                                         "Candidature introuvable"
                                 )
                         );
@@ -337,7 +337,7 @@ public class ApplicationService {
         }
 
 
-        throw new RuntimeException(
+        throw new IllegalArgumentException(
                 "Vous n'êtes pas autorisé à consulter ce CV"
         );
     }
@@ -351,7 +351,7 @@ public class ApplicationService {
 
         if (application.getCvPath() == null) {
 
-            throw new RuntimeException(
+            throw new ResourceNotFoundException(
                     "Aucun CV associé à cette candidature"
             );
         }
@@ -377,7 +377,7 @@ public class ApplicationService {
         return userRepository
                 .findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Utilisateur connecté introuvable"
                         )
                 );

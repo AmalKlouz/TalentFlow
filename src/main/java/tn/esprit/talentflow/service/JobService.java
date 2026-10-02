@@ -5,13 +5,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import tn.esprit.talentflow.dto.JobRequest;
 import tn.esprit.talentflow.dto.JobResponse;
 import tn.esprit.talentflow.entity.Job;
 import tn.esprit.talentflow.entity.JobStatus;
 import tn.esprit.talentflow.entity.User;
+import tn.esprit.talentflow.exception.ResourceNotFoundException;
 import tn.esprit.talentflow.repository.JobRepository;
 import tn.esprit.talentflow.repository.UserRepository;
 
@@ -27,7 +26,7 @@ public class JobService {
 
     // =========================================================
     // CREATE
-    // ========================================================
+    // =========================================================
     public JobResponse createJob(JobRequest request) {
 
         User currentUser = getCurrentUser();
@@ -53,7 +52,6 @@ public class JobService {
     // =========================================================
     // GET ALL
     // =========================================================
-
     public List<JobResponse> getAllJobs() {
 
         return jobRepository.findAll()
@@ -65,12 +63,12 @@ public class JobService {
     // =========================================================
     // GET BY ID
     // =========================================================
-
     public JobResponse getJobById(Long id) {
 
         Job job = jobRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Offre introuvable"));
+                        new ResourceNotFoundException(
+                                "Offre introuvable"));
 
         return toResponse(job);
     }
@@ -89,14 +87,14 @@ public class JobService {
     // =========================================================
     // UPDATE
     // =========================================================
-
     public JobResponse updateJob(
             Long id,
             JobRequest request) {
 
         Job job = jobRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Offre introuvable"));
+                        new ResourceNotFoundException(
+                                "Offre introuvable"));
 
         job.setTitle(request.getTitle());
         job.setDescription(request.getDescription());
@@ -114,12 +112,12 @@ public class JobService {
     // =========================================================
     // PUBLISH
     // =========================================================
-
     public JobResponse publishJob(Long id) {
 
         Job job = jobRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Offre introuvable"));
+                        new ResourceNotFoundException(
+                                "Offre introuvable"));
 
         job.setStatus(JobStatus.PUBLISHED);
 
@@ -135,12 +133,12 @@ public class JobService {
     // =========================================================
     // CLOSE
     // =========================================================
-
     public JobResponse closeJob(Long id) {
 
         Job job = jobRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Offre introuvable"));
+                        new ResourceNotFoundException(
+                                "Offre introuvable"));
 
         job.setStatus(JobStatus.CLOSED);
 
@@ -152,11 +150,11 @@ public class JobService {
     // =========================================================
     // DELETE
     // =========================================================
-
     public void deleteJob(Long id) {
 
         if (!jobRepository.existsById(id)) {
-            throw new RuntimeException("Offre introuvable");
+            throw new ResourceNotFoundException(
+                    "Offre introuvable");
         }
 
         jobRepository.deleteById(id);
@@ -165,7 +163,6 @@ public class JobService {
     // =========================================================
     // CURRENT USER
     // =========================================================
-
     private User getCurrentUser() {
 
         String email = SecurityContextHolder
@@ -175,14 +172,13 @@ public class JobService {
 
         return userRepository.findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Utilisateur connecté introuvable"));
     }
 
     // =========================================================
     // ENTITY → DTO
     // =========================================================
-
     private JobResponse toResponse(Job job) {
 
         User creator = job.getCreatedBy();

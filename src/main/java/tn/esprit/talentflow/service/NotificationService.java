@@ -1,6 +1,7 @@
 package tn.esprit.talentflow.service;
 
 import lombok.RequiredArgsConstructor;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -9,9 +10,11 @@ import tn.esprit.talentflow.dto.NotificationResponse;
 import tn.esprit.talentflow.entity.Notification;
 import tn.esprit.talentflow.entity.NotificationType;
 import tn.esprit.talentflow.entity.User;
+import tn.esprit.talentflow.exception.ResourceNotFoundException;
 import tn.esprit.talentflow.repository.NotificationRepository;
 import tn.esprit.talentflow.repository.UserRepository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -39,8 +42,9 @@ public class NotificationService {
 
 
     // =========================================================
-    // GET MY UNREAD NOTIFICATIONS
+    // CREATE NOTIFICATION
     // =========================================================
+
     public void createNotification(
             User user,
             NotificationType type,
@@ -51,11 +55,17 @@ public class NotificationService {
                 .type(type)
                 .message(message)
                 .read(false)
-                .createdAt(java.time.LocalDateTime.now())
+                .createdAt(LocalDateTime.now())
                 .build();
 
         notificationRepository.save(notification);
     }
+
+
+    // =========================================================
+    // GET MY UNREAD NOTIFICATIONS
+    // =========================================================
+
     public List<NotificationResponse> getMyUnreadNotifications() {
 
         User user = getCurrentUser();
@@ -84,6 +94,63 @@ public class NotificationService {
 
 
     // =========================================================
+    // MARK ONE NOTIFICATION AS READ
+    // =========================================================
+
+    public NotificationResponse markAsRead(
+            Long notificationId) {
+
+        User user = getCurrentUser();
+
+        Notification notification =
+                notificationRepository.findById(notificationId)
+                        .orElseThrow(() ->
+                                new ResourceNotFoundException(
+                                        "Notification introuvable"
+                                )
+                        );
+
+        // Vérifier que la notification appartient
+        // bien à l'utilisateur connecté
+        if (!notification.getUser().getId().equals(user.getId())) {
+
+            throw new IllegalArgumentException(
+                    "Accès interdit à cette notification"
+            );
+        }
+
+        notification.setRead(true);
+
+        Notification updated =
+                notificationRepository.save(notification);
+
+        return toResponse(updated);
+    }
+
+
+    // =========================================================
+    // MARK ALL NOTIFICATIONS AS READ
+    // =========================================================
+
+    public void markAllAsRead() {
+
+        User user = getCurrentUser();
+
+        List<Notification> notifications =
+                notificationRepository
+                        .findByUserIdOrderByCreatedAtDesc(
+                                user.getId()
+                        );
+
+        notifications.forEach(notification ->
+                notification.setRead(true)
+        );
+
+        notificationRepository.saveAll(notifications);
+    }
+
+
+    // =========================================================
     // CURRENT USER
     // =========================================================
 
@@ -99,7 +166,7 @@ public class NotificationService {
         return userRepository
                 .findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Utilisateur introuvable"
                         )
                 );
@@ -120,49 +187,5 @@ public class NotificationService {
                 .read(notification.isRead())
                 .createdAt(notification.getCreatedAt())
                 .build();
-    }
-    public NotificationResponse markAsRead(Long notificationId) {
-
-        User user = getCurrentUser();
-
-        Notification notification =
-                notificationRepository.findById(notificationId)
-                        .orElseThrow(() ->
-                                new RuntimeException(
-                                        "Notification introuvable"
-                                )
-                        );
-
-        // Vérifier que la notification appartient
-        // bien à l'utilisateur connecté
-        if (!notification.getUser().getId().equals(user.getId())) {
-
-            throw new RuntimeException(
-                    "Accès interdit à cette notification"
-            );
-        }
-
-        notification.setRead(true);
-
-        Notification updated =
-                notificationRepository.save(notification);
-
-        return toResponse(updated);
-    }
-    public void markAllAsRead() {
-
-        User user = getCurrentUser();
-
-        List<Notification> notifications =
-                notificationRepository
-                        .findByUserIdOrderByCreatedAtDesc(
-                                user.getId()
-                        );
-
-        notifications.forEach(notification ->
-                notification.setRead(true)
-        );
-
-        notificationRepository.saveAll(notifications);
     }
 }

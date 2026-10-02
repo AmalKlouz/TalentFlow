@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+
 import tn.esprit.talentflow.entity.InterviewType;
 
 import java.time.LocalDateTime;
@@ -15,18 +16,18 @@ import java.time.LocalDateTime;
 @Builder
 public class InterviewRequest {
 
-    @NotNull
+    @NotNull(message = "L'identifiant de la candidature est obligatoire")
     private Long applicationId;
 
-    @NotNull
-    @Future
+    @NotNull(message = "La date de l'entretien est obligatoire")
+    @Future(message = "La date de l'entretien doit être dans le futur")
     private LocalDateTime scheduledAt;
 
-    @NotNull
-    @Min(15)
+    @NotNull(message = "La durée est obligatoire")
+    @Min(value = 15, message = "La durée minimale est de 15 minutes")
     private Integer duration;
 
-    @NotNull
+    @NotNull(message = "Le type d'entretien est obligatoire")
     private InterviewType type;
 
     private String location;

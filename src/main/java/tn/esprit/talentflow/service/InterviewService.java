@@ -2,6 +2,8 @@ package tn.esprit.talentflow.service;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import tn.esprit.talentflow.dto.InterviewRequest;
@@ -12,12 +14,10 @@ import tn.esprit.talentflow.entity.Interview;
 import tn.esprit.talentflow.entity.InterviewStatus;
 import tn.esprit.talentflow.entity.NotificationType;
 import tn.esprit.talentflow.entity.User;
+import tn.esprit.talentflow.exception.ResourceNotFoundException;
 import tn.esprit.talentflow.repository.ApplicationRepository;
 import tn.esprit.talentflow.repository.InterviewRepository;
 import tn.esprit.talentflow.repository.UserRepository;
-
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 
@@ -30,7 +30,6 @@ public class InterviewService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
 
-
     // =========================================================
     // CREATE INTERVIEW
     // =========================================================
@@ -42,11 +41,10 @@ public class InterviewService {
                 applicationRepository.findById(
                         request.getApplicationId()
                 ).orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Candidature introuvable"
                         )
                 );
-
 
         // L'entretien est possible uniquement
         // pour une candidature shortlistée
@@ -55,23 +53,21 @@ public class InterviewService {
         if (application.getStatus() != ApplicationStatus.SHORTLISTED
                 && application.getStatus() != ApplicationStatus.INTERVIEW) {
 
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Un entretien peut uniquement être planifié "
                             + "pour une candidature shortlistée"
             );
         }
-
 
         // Une seule interview par candidature
 
         if (interviewRepository.existsByApplicationId(
                 application.getId())) {
 
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Un entretien existe déjà pour cette candidature"
             );
         }
-
 
         Interview interview = Interview.builder()
                 .application(application)
@@ -83,20 +79,14 @@ public class InterviewService {
                 .status(InterviewStatus.SCHEDULED)
                 .build();
 
-
         // La candidature passe automatiquement
         // au statut INTERVIEW
 
-        application.setStatus(
-                ApplicationStatus.INTERVIEW
-        );
-
+        application.setStatus(ApplicationStatus.INTERVIEW);
         applicationRepository.save(application);
-
 
         Interview savedInterview =
                 interviewRepository.save(interview);
-
 
         // =====================================================
         // NOTIFICATION CANDIDATE
@@ -110,10 +100,8 @@ public class InterviewService {
                         + application.getJob().getTitle()
         );
 
-
         return toResponse(savedInterview);
     }
-
 
     // =========================================================
     // GET ALL INTERVIEWS
@@ -128,7 +116,6 @@ public class InterviewService {
                 .toList();
     }
 
-
     // =========================================================
     // GET INTERVIEWS BY APPLICATION
     // =========================================================
@@ -138,7 +125,7 @@ public class InterviewService {
 
         if (!applicationRepository.existsById(applicationId)) {
 
-            throw new RuntimeException(
+            throw new ResourceNotFoundException(
                     "Candidature introuvable"
             );
         }
@@ -149,7 +136,6 @@ public class InterviewService {
                 .map(this::toResponse)
                 .toList();
     }
-
 
     // =========================================================
     // GET MY INTERVIEWS - CANDIDATE
@@ -168,7 +154,6 @@ public class InterviewService {
                 .toList();
     }
 
-
     // =========================================================
     // GET INTERVIEWS BY CANDIDATE
     // =========================================================
@@ -176,13 +161,18 @@ public class InterviewService {
     public List<InterviewResponse> getInterviewsByCandidate(
             Long candidateId) {
 
+        if (!userRepository.existsById(candidateId)) {
+            throw new ResourceNotFoundException(
+                    "Candidat introuvable"
+            );
+        }
+
         return interviewRepository
                 .findByApplicationCandidateId(candidateId)
                 .stream()
                 .map(this::toResponse)
                 .toList();
     }
-
 
     // =========================================================
     // UPDATE INTERVIEW STATUS
@@ -195,14 +185,13 @@ public class InterviewService {
         Interview interview =
                 interviewRepository.findById(id)
                         .orElseThrow(() ->
-                                new RuntimeException(
+                                new ResourceNotFoundException(
                                         "Entretien introuvable"
                                 )
                         );
 
         InterviewStatus currentStatus =
                 interview.getStatus();
-
 
         // =====================================================
         // VALID STATUS TRANSITIONS
@@ -218,10 +207,9 @@ public class InterviewService {
                     false;
         };
 
-
         if (!validTransition) {
 
-            throw new RuntimeException(
+            throw new IllegalArgumentException(
                     "Transition impossible de "
                             + currentStatus
                             + " vers "
@@ -229,12 +217,10 @@ public class InterviewService {
             );
         }
 
-
         interview.setStatus(newStatus);
 
         Interview updatedInterview =
                 interviewRepository.save(interview);
-
 
         // =====================================================
         // NOTIFICATION CANDIDATE
@@ -251,10 +237,8 @@ public class InterviewService {
                         + newStatus
         );
 
-
         return toResponse(updatedInterview);
     }
-
 
     // =========================================================
     // DELETE INTERVIEW
@@ -265,14 +249,27 @@ public class InterviewService {
         Interview interview =
                 interviewRepository.findById(id)
                         .orElseThrow(() ->
-                                new RuntimeException(
+                                new ResourceNotFoundException(
                                         "Entretien introuvable"
                                 )
                         );
 
-        interviewRepository.delete(interview);
-    }
+        Application application =
+                interview.getApplication();
 
+        interviewRepository.delete(interview);
+
+        // Si l'entretien est supprimé,
+        // la candidature redevient shortlistée.
+
+        if (application.getStatus() == ApplicationStatus.INTERVIEW) {
+            application.setStatus(
+                    ApplicationStatus.SHORTLISTED
+            );
+
+            applicationRepository.save(application);
+        }
+    }
 
     // =========================================================
     // CURRENT USER
@@ -285,18 +282,16 @@ public class InterviewService {
                         .getContext()
                         .getAuthentication();
 
-        String email =
-                authentication.getName();
+        String email = authentication.getName();
 
         return userRepository
                 .findByEmail(email)
                 .orElseThrow(() ->
-                        new RuntimeException(
+                        new ResourceNotFoundException(
                                 "Utilisateur connecté introuvable"
                         )
                 );
     }
-
 
     // =========================================================
     // ENTITY → DTO
@@ -313,7 +308,6 @@ public class InterviewService {
 
         var job =
                 application.getJob();
-
 
         return InterviewResponse.builder()
 
