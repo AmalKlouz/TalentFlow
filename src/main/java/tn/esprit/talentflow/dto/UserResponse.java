@@ -4,6 +4,8 @@ import lombok.*;
 
 import tn.esprit.talentflow.entity.Role;
 
+import java.util.List;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,4 +24,6 @@ public class UserResponse {
     private Role role;
 
     private boolean enabled;
+
+    private List<String> skills;
 }

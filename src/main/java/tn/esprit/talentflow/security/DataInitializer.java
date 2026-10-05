@@ -9,6 +9,8 @@ import tn.esprit.talentflow.entity.Role;
 import tn.esprit.talentflow.entity.User;
 import tn.esprit.talentflow.repository.UserRepository;
 
+import java.util.List;
+
 @Configuration
 @RequiredArgsConstructor
 public class DataInitializer {
@@ -33,7 +35,7 @@ public class DataInitializer {
                         )
                         .role(Role.ADMIN)
                         .enabled(true)
-                        .skills("")
+                        .skills(List.of())
                         .build();
 
                 userRepository.save(admin);

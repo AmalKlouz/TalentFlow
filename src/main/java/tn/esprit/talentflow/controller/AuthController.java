@@ -1,10 +1,7 @@
 package tn.esprit.talentflow.controller;
 
 import org.springframework.security.access.prepost.PreAuthorize;
-import tn.esprit.talentflow.dto.AuthResponse;
-import tn.esprit.talentflow.dto.LoginRequest;
-import tn.esprit.talentflow.dto.RegisterRequest;
-import tn.esprit.talentflow.dto.UserResponse;
+import tn.esprit.talentflow.dto.*;
 import tn.esprit.talentflow.entity.Role;
 import tn.esprit.talentflow.service.AuthService;
 
@@ -60,4 +57,28 @@ public class AuthController {
                 .status(HttpStatus.CREATED)
                 .body(authService.createUser(request, Role.RECRUITER));
     }
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+
+        authService.forgotPassword(request);
+
+        return ResponseEntity.ok(
+                "Un code de réinitialisation a été envoyé"
+        );
+    }
+
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+
+        authService.resetPassword(request);
+
+        return ResponseEntity.ok(
+                "Mot de passe réinitialisé avec succès"
+        );
+    }
+
+
 }

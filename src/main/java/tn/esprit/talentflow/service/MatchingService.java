@@ -1,11 +1,11 @@
-package tn.esprit.talentflow.service;
+        package tn.esprit.talentflow.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import tn.esprit.talentflow.exception.ResourceNotFoundException;
 import tn.esprit.talentflow.dto.MatchingResponse;
 import tn.esprit.talentflow.entity.Job;
 import tn.esprit.talentflow.entity.User;
+import tn.esprit.talentflow.exception.ResourceNotFoundException;
 import tn.esprit.talentflow.repository.JobRepository;
 import tn.esprit.talentflow.repository.UserRepository;
 
@@ -35,23 +35,28 @@ public class MatchingService {
                                 "Offre introuvable"
                         ));
 
+        // Compétences demandées par l'offre
         List<String> requiredSkills =
                 parseSkills(job.getRequiredSkills());
 
+        // Compétences du candidat
         List<String> candidateSkills =
                 extractCandidateSkills(candidate);
 
+        // Compétences communes
         List<String> matchingSkills =
                 requiredSkills.stream()
                         .filter(candidateSkills::contains)
                         .toList();
 
+        // Compétences manquantes
         List<String> missingSkills =
                 requiredSkills.stream()
                         .filter(skill ->
                                 !candidateSkills.contains(skill))
                         .toList();
 
+        // Calcul du score
         double score = 0;
 
         if (!requiredSkills.isEmpty()) {
@@ -77,6 +82,10 @@ public class MatchingService {
                 .build();
     }
 
+    // =========================================================
+    // PARSE JOB SKILLS
+    // =========================================================
+
     private List<String> parseSkills(String skills) {
 
         if (skills == null || skills.isBlank()) {
@@ -91,31 +100,24 @@ public class MatchingService {
                 .toList();
     }
 
+    // =========================================================
+    // CANDIDATE SKILLS
+    // =========================================================
+
     private List<String> extractCandidateSkills(User candidate) {
 
-        /*
-         * Pour l'instant, les compétences du candidat
-         * sont récupérées depuis le champ "skills"
-         * lorsqu'il existe dans User.
-         */
-
-        try {
-            String skills = candidate.getSkills();
-
-            if (skills == null || skills.isBlank()) {
-                return List.of();
-            }
-
-            return Arrays.stream(skills.split(","))
-                    .map(String::trim)
-                    .map(String::toLowerCase)
-                    .filter(skill -> !skill.isBlank())
-                    .distinct()
-                    .toList();
-
-        } catch (Exception e) {
+        if (candidate.getSkills() == null
+                || candidate.getSkills().isEmpty()) {
 
             return List.of();
         }
+
+        return candidate.getSkills()
+                .stream()
+                .map(String::trim)
+                .map(String::toLowerCase)
+                .filter(skill -> !skill.isBlank())
+                .distinct()
+                .toList();
     }
 }

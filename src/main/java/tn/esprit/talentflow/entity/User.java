@@ -3,6 +3,10 @@ package tn.esprit.talentflow.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 @Entity
 @Table(name = "users")
 @Getter
@@ -35,6 +39,14 @@ public class User {
     @Column(nullable = false)
     private boolean enabled = true;
 
-    @Column(nullable = false)
-    private String skills;
+    @ElementCollection @CollectionTable( name = "user_skills",
+            joinColumns = @JoinColumn(name = "user_id") )
+    @Column(name = "skill") @Builder.Default
+    private List<String> skills = new ArrayList<>();
+
+    @Column
+    private String resetCode;
+
+    @Column
+    private LocalDateTime resetCodeExpiration;
 }
